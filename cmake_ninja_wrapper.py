@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
 import sys
 import os
@@ -6,24 +6,20 @@ import subprocess
 import shutil
 import re
 import select
-import os.path
-
 # ---------------------- Configuration section ------------------------------
 
-if os.path.exists("/usr/local/bin/cmake"):
-    REAL_CMAKE = "/usr/local/bin/cmake"
-else:
-    REAL_CMAKE = "/usr/bin/cmake"
+REAL_CMAKE = '/usr/local/bin/cmake'
+if not os.path.isfile(REAL_CMAKE):
+    REAL_CMAKE = '/usr/bin/cmake'
+if not os.path.isfile(REAL_CMAKE):
+    REAL_CMAKE = shutil.which('cmake')
+if not os.path.isfile(REAL_CMAKE):
+    sys.exit('Could not find cmake!')
+NINJA_PATH = shutil.which('ninja')
+if not os.path.isfile(NINJA_PATH):
+    sys.exit('Could not find ninja!')
 
-
-if os.path.exists("/usr/local/bin/ninja"):
-    NINJA_PATH = "/usr/local/bin/ninja"
-else:
-    NINJA_PATH = "/usr/bin/ninja"
-
-
-TRACING = True
-
+TRACING = False
 
 # --------------------------- Code section ----------------------------------
 
@@ -54,12 +50,12 @@ def call_cmake(passing_args):
         for fd in ret[0]:
             if fd == proc.stdout.fileno():
                 line = proc.stdout.readline()
-                sys.stdout.write(line)
+                sys.stdout.buffer.write(line)
                 sys.stdout.flush()
                 trace(line)
             if fd == proc.stderr.fileno():
                 line = proc.stderr.readline()
-                sys.stderr.write(line)
+                sys.stderr.buffer.write(line)
                 sys.stderr.flush()
                 trace(line)
 
@@ -67,11 +63,11 @@ def call_cmake(passing_args):
             break
 
     for line in proc.stdout:
-        sys.stdout.write(line)
+        sys.stdout.buffer.write(line)
         trace(line)
 
     for line in proc.stderr:
-        sys.stderr.write(line)
+        sys.stderr.buffer.write(line)
         trace(line)
 
     return proc.poll()
@@ -79,10 +75,8 @@ def call_cmake(passing_args):
 def is_real_project():
     """Detect if called inside clion private directory."""
     cwd = os.getcwd()
-    result = "clion" in cwd and "cmake" in cwd.lower() and "generated" in cwd
-    trace("is_real_project cwd=" + cwd + " result=" + str(result))
+    # return "clion" in cwd and "cmake" in cwd and "generated" in cwd
     return True
-    #return result
 
 class CMakeCache(object):
     """CMake cache management utility"""
